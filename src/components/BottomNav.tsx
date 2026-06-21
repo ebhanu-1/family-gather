@@ -6,9 +6,10 @@ type NavTab = 'home' | 'calendar' | 'chat'
 interface Props {
   active: NavTab
   onNavigate: (tab: NavTab) => void
+  chatUnread?: number
 }
 
-export function BottomNav({ active, onNavigate }: Props) {
+export function BottomNav({ active, onNavigate, chatUnread = 0 }: Props) {
   const tabs = [
     { id: 'home' as NavTab,     label: 'Home',  Icon: IconHome },
     { id: 'calendar' as NavTab, label: 'Plans', Icon: IconCal  },
@@ -33,7 +34,16 @@ export function BottomNav({ active, onNavigate }: Props) {
             gap: 2, cursor: 'pointer', padding: '4px 0',
             WebkitTapHighlightColor: 'transparent',
           }}>
-            <tab.Icon color={on ? C.sage : C.textLight} />
+            <div style={{ position: 'relative', display: 'inline-flex' }}>
+              <tab.Icon color={on ? C.sage : C.textLight} />
+              {tab.id === 'chat' && chatUnread > 0 && (
+                <div style={{
+                  position: 'absolute', top: -1, right: -3,
+                  width: 8, height: 8, borderRadius: '50%',
+                  background: '#E53E3E', border: '1.5px solid white',
+                }} />
+              )}
+            </div>
             <span style={{ fontSize: 10, color: on ? C.sage : C.textLight, fontWeight: on ? 600 : 400 }}>
               {tab.label}
             </span>

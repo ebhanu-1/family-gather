@@ -11,9 +11,10 @@ interface Props {
   onSend: (text: string) => void
   onInputFocus?: () => void
   onInputBlur?: () => void
+  lastSeenAt?: Date | null
 }
 
-export function GroupChatScreen({ messages, members, memberId, onSend, onInputFocus, onInputBlur }: Props) {
+export function GroupChatScreen({ messages, members, memberId, onSend, onInputFocus, onInputBlur, lastSeenAt }: Props) {
   const [text, setText] = useState('')
   const chatRef = useRef<HTMLDivElement>(null)
 
@@ -75,8 +76,19 @@ export function GroupChatScreen({ messages, members, memberId, onSend, onInputFo
           const showDay = day && day !== prevDay
           const showAvatar = !isMe && (i === messages.length - 1 || messages[i + 1]?.authorId !== msg.authorId)
           const isFirst = i === 0 || messages[i - 1].authorId !== msg.authorId
+          const msgTs = msg.timestamp?.toDate?.()
+          const prevMsgTs = i > 0 ? messages[i - 1].timestamp?.toDate?.() : null
+          const showNewDivider = lastSeenAt && lastSeenAt.getTime() > 0 && msgTs && msgTs > lastSeenAt &&
+            (!prevMsgTs || prevMsgTs <= lastSeenAt)
           return (
             <div key={msg.id}>
+              {showNewDivider && (
+                <div style={{ textAlign: 'center', fontSize: 11, color: '#9C4221', margin: '12px 0 8px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ flex: 1, height: 1, background: '#FBD38D' }} />
+                  new messages
+                  <div style={{ flex: 1, height: 1, background: '#FBD38D' }} />
+                </div>
+              )}
               {showDay && (
                 <div style={{ textAlign: 'center', fontSize: 11, color: C.textLight, margin: '12px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div style={{ flex: 1, height: 1, background: C.border }} />

@@ -47,6 +47,24 @@ function AuthenticatedApp({ identity, clearIdentity, familyId }: { identity: Ide
   const [eventTab, setEventTab] = useState<EventTab>('plan')
   const [chatInputFocused, setChatInputFocused] = useState(false)
 
+  const [lastSeenChatAt, setLastSeenChatAt] = useState<Date>(() => {
+    const s = localStorage.getItem(`familygather_lastchat_${familyId}_${identity.memberId}`)
+    return s ? new Date(s) : new Date(0)
+  })
+  const [chatNewMsgSince, setChatNewMsgSince] = useState<Date | null>(null)
+
+  function markChatSeen() {
+    const now = new Date()
+    setLastSeenChatAt(now)
+    localStorage.setItem(`familygather_lastchat_${familyId}_${identity.memberId}`, now.toISOString())
+  }
+
+  const chatUnread = groupMessages.filter(m => {
+    if (m.authorId === identity.memberId) return false
+    const ts = m.timestamp?.toDate?.()
+    return ts && ts > lastSeenChatAt
+  }).length
+
   function goTo(to: Screen, eventId?: string, tab?: EventTab) {
     setStack(s => [...s, { screen, navTab }])
     setScreen(to)
@@ -63,6 +81,10 @@ function AuthenticatedApp({ identity, clearIdentity, familyId }: { identity: Ide
 
   function switchTab(tab: 'home' | 'calendar' | 'chat') {
     setNavTab(tab); setStack([]); setScreen(tab)
+    if (tab === 'chat') {
+      setChatNewMsgSince(lastSeenChatAt)
+      markChatSeen()
+    }
   }
 
   const selectedEvent = events.find(e => e.id === selectedEventId) ?? null
@@ -93,6 +115,7 @@ function AuthenticatedApp({ identity, clearIdentity, familyId }: { identity: Ide
             onSend={text => sendGroupMessage(identity.memberId, text, familyId)}
             onInputFocus={() => setChatInputFocused(true)}
             onInputBlur={() => setChatInputFocused(false)}
+            lastSeenAt={chatNewMsgSince}
           />
         )}
         {screen === 'event' && (
@@ -120,7 +143,7 @@ function AuthenticatedApp({ identity, clearIdentity, familyId }: { identity: Ide
           />
         )}
       </div>
-      {!hideNav && <BottomNav active={navTab} onNavigate={switchTab} />}
+      {!hideNav && <BottomNav active={navTab} onNavigate={switchTab} chatUnread={chatUnread} />}
     </div>
   )
 }
