@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
+    <meta name="theme-color" content="#4a7c5a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="FamilyGather" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>FamilyGather</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body, #root {
+        height: 100%;
+        font-family: system-ui, -apple-system, sans-serif;
+        background: oklch(97% 0.012 75);
+        -webkit-font-smoothing: antialiased;
+        overscroll-behavior: none;
+      }
+      input, textarea, button, select {
+        font-family: inherit;
+      }
+      /* Prevent iOS Safari auto-zoom: triggered when input font-size < 16px.
+         !important is needed to override inline style={{ fontSize: 14 }} etc. */
+      input, textarea, select {
+        font-size: 16px !important;
+      }
+      /* Prevent double-tap zoom on buttons and interactive elements */
+      button, a, [role="button"] {
+        touch-action: manipulation;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
