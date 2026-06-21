@@ -265,7 +265,7 @@ function DemoMain({ me, allKnownMembers, onSwitchUser }: { me: Member; allKnownM
         )}
         {screen === 'create' && (
           <CreateEventScreen
-            memberId={me.id} members={allMembers}
+            memberId={me.id} members={allMembers} familyId="demo"
             onCancel={goBack} onCreated={() => {}}
             _demoOnCreate={data => {
               const id = generateId()

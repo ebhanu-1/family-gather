@@ -13,43 +13,55 @@ import {
 import { db } from '../firebase'
 import type { Member, FamilyEvent, TodoItem, ItineraryItem, ChatMessage } from '../types'
 
+// Backward compat: docs without familyId belong to 'default'
+function matchesFamily<T extends { familyId?: string }>(item: T, familyId: string) {
+  return item.familyId === familyId || (familyId === 'default' && !item.familyId)
+}
+
 // ── Members ───────────────────────────────────────────────────────────────────
 
-export function useMembers() {
+export function useMembers(familyId: string) {
   const [members, setMembers] = useState<Member[]>([])
   useEffect(() => {
     return onSnapshot(
       query(collection(db, 'members'), orderBy('createdAt')),
-      snap => setMembers(snap.docs.map(d => ({ id: d.id, ...d.data() } as Member)))
+      snap => setMembers(
+        snap.docs.map(d => ({ id: d.id, ...d.data() } as Member))
+          .filter(m => matchesFamily(m, familyId))
+      )
     )
-  }, [])
+  }, [familyId])
   return members
 }
 
-export async function fetchMembers(): Promise<Member[]> {
+export async function fetchMembers(familyId: string): Promise<Member[]> {
   const snap = await getDocs(query(collection(db, 'members'), orderBy('createdAt')))
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as Member))
+    .filter(m => matchesFamily(m, familyId))
 }
 
-export async function createMember(id: string, data: Omit<Member, 'id'>): Promise<void> {
-  await setDoc(doc(db, 'members', id), { ...data, createdAt: serverTimestamp() })
+export async function createMember(id: string, data: Omit<Member, 'id'>, familyId: string): Promise<void> {
+  await setDoc(doc(db, 'members', id), { ...data, familyId, createdAt: serverTimestamp() })
 }
 
 // ── Events ────────────────────────────────────────────────────────────────────
 
-export function useEvents() {
+export function useEvents(familyId: string) {
   const [events, setEvents] = useState<FamilyEvent[]>([])
   useEffect(() => {
     return onSnapshot(
       query(collection(db, 'events'), orderBy('date')),
-      snap => setEvents(snap.docs.map(d => ({ ...d.data(), id: d.id } as FamilyEvent)))
+      snap => setEvents(
+        snap.docs.map(d => ({ ...d.data(), id: d.id } as FamilyEvent))
+          .filter(e => matchesFamily(e, familyId))
+      )
     )
-  }, [])
+  }, [familyId])
   return events
 }
 
-export async function createEvent(data: Omit<FamilyEvent, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'events'), { ...data, createdAt: serverTimestamp() })
+export async function createEvent(data: Omit<FamilyEvent, 'id'>, familyId: string): Promise<string> {
+  const ref = await addDoc(collection(db, 'events'), { ...data, familyId, createdAt: serverTimestamp() })
   return ref.id
 }
 
@@ -165,20 +177,23 @@ export async function sendMessage(eventId: string, authorId: string, text: strin
 
 // ── Group Chat (top-level /messages collection) ───────────────────────────────
 
-export function useGroupMessages() {
+export function useGroupMessages(familyId: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   useEffect(() => {
     return onSnapshot(
       query(collection(db, 'messages'), orderBy('timestamp')),
-      snap => setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() } as ChatMessage)))
+      snap => setMessages(
+        snap.docs.map(d => ({ id: d.id, ...d.data() } as ChatMessage))
+          .filter(m => matchesFamily(m, familyId))
+      )
     )
-  }, [])
+  }, [familyId])
   return messages
 }
 
-export async function sendGroupMessage(authorId: string, text: string): Promise<void> {
+export async function sendGroupMessage(authorId: string, text: string, familyId: string): Promise<void> {
   await addDoc(collection(db, 'messages'), {
-    authorId, text: text.trim(), timestamp: serverTimestamp(),
+    authorId, text: text.trim(), timestamp: serverTimestamp(), familyId,
   })
 }
 

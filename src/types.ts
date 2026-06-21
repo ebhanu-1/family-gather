@@ -5,6 +5,7 @@ export interface Member {
   name: string
   initials: string
   color: string
+  familyId?: string
   createdAt?: Timestamp
 }
 
@@ -20,6 +21,7 @@ export interface FamilyEvent {
   description: string
   attendees: string[] // member IDs
   createdBy: string
+  familyId?: string
   createdAt?: Timestamp
 }
 
@@ -45,6 +47,7 @@ export interface ChatMessage {
   id: string
   authorId: string
   text: string
+  familyId?: string
   timestamp: Timestamp | null
 }
 

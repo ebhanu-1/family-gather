@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import type { Identity } from '../types'
 
-const KEY = 'familygather_identity'
+export function useIdentity(familyId: string) {
+  const KEY = `familygather_identity_${familyId}`
 
-export function useIdentity() {
   const [identity, setIdentity] = useState<Identity | null>(() => {
     try {
       const raw = localStorage.getItem(KEY)

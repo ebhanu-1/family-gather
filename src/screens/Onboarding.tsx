@@ -6,11 +6,12 @@ import type { Member, Identity } from '../types'
 
 interface Props {
   onComplete: (identity: Identity) => void
+  familyId: string
 }
 
 type Step = 'loading' | 'pick' | 'create'
 
-export function Onboarding({ onComplete }: Props) {
+export function Onboarding({ onComplete, familyId }: Props) {
   const [step, setStep] = useState<Step>('loading')
   const [members, setMembers] = useState<Member[]>([])
   const [name, setName] = useState('')
@@ -19,7 +20,7 @@ export function Onboarding({ onComplete }: Props) {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    fetchMembers().then(existing => {
+    fetchMembers(familyId).then(existing => {
       setMembers(existing)
       setStep(existing.length > 0 ? 'pick' : 'create')
     }).catch(() => setStep('create'))
@@ -43,7 +44,7 @@ export function Onboarding({ onComplete }: Props) {
         name: name.trim(),
         initials: initials || name.slice(0, 2).toUpperCase(),
         color,
-      })
+      }, familyId)
       onComplete({ memberId })
     } catch {
       setError('Could not save profile. Try again.')

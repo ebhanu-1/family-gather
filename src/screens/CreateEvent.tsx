@@ -7,6 +7,7 @@ import type { FamilyEvent, Member } from '../types'
 interface Props {
   memberId: string
   members: Member[]
+  familyId: string
   onCancel: () => void
   onCreated: (eventId: string) => void
   _demoOnCreate?: (data: Omit<FamilyEvent, 'id'>) => void
@@ -23,7 +24,7 @@ const EMOJI_MAP: Record<FamilyEvent['type'], string> = {
   holiday: '🎉', vacation: '✈️', birthday: '🎂', other: '📅',
 }
 
-export function CreateEventScreen({ memberId, members, onCancel, onCreated, _demoOnCreate }: Props) {
+export function CreateEventScreen({ memberId, members, familyId, onCancel, onCreated, _demoOnCreate }: Props) {
   const today = new Date().toISOString().split('T')[0]
   const [form, setForm] = useState({
     name: '', type: 'other' as FamilyEvent['type'],
@@ -60,7 +61,7 @@ export function CreateEventScreen({ memberId, members, onCancel, onCreated, _dem
 
     setLoading(true)
     try {
-      const eventId = await createEvent(eventData)
+      const eventId = await createEvent(eventData, familyId)
       onCreated(eventId)
     } catch { setLoading(false) }
   }

@@ -18,22 +18,26 @@ import type { Screen, EventTab, Identity, FamilyEvent, Member } from './types'
 
 const isFirebaseConfigured = Boolean(import.meta.env.VITE_FIREBASE_PROJECT_ID)
 
+function getFamilyId(): string {
+  return new URLSearchParams(window.location.search).get('family') || 'default'
+}
+
 export default function App() {
   if (!isFirebaseConfigured) return <DemoApp />
-
   return <MainApp />
 }
 
 function MainApp() {
-  const { identity, saveIdentity, clearIdentity } = useIdentity()
-  if (!identity) return <Onboarding onComplete={saveIdentity} />
-  return <AuthenticatedApp identity={identity} clearIdentity={clearIdentity} />
+  const familyId = getFamilyId()
+  const { identity, saveIdentity, clearIdentity } = useIdentity(familyId)
+  if (!identity) return <Onboarding onComplete={saveIdentity} familyId={familyId} />
+  return <AuthenticatedApp identity={identity} clearIdentity={clearIdentity} familyId={familyId} />
 }
 
-function AuthenticatedApp({ identity, clearIdentity }: { identity: Identity; clearIdentity: () => void }) {
-  const members = useMembers()
-  const events = useEvents()
-  const groupMessages = useGroupMessages()
+function AuthenticatedApp({ identity, clearIdentity, familyId }: { identity: Identity; clearIdentity: () => void; familyId: string }) {
+  const members = useMembers(familyId)
+  const events = useEvents(familyId)
+  const groupMessages = useGroupMessages(familyId)
   const allItinerary = useAllItinerary(events.map(e => e.id))
 
   const [screen, setScreen] = useState<Screen>('home')
@@ -85,7 +89,7 @@ function AuthenticatedApp({ identity, clearIdentity }: { identity: Identity; cle
         {screen === 'chat' && (
           <GroupChatScreen
             messages={groupMessages} members={members} memberId={identity.memberId}
-            onSend={text => sendGroupMessage(identity.memberId, text)}
+            onSend={text => sendGroupMessage(identity.memberId, text, familyId)}
           />
         )}
         {screen === 'event' && (
@@ -104,7 +108,7 @@ function AuthenticatedApp({ identity, clearIdentity }: { identity: Identity; cle
         )}
         {screen === 'create' && (
           <CreateEventScreen
-            memberId={identity.memberId} members={members}
+            memberId={identity.memberId} members={members} familyId={familyId}
             onCancel={goBack}
             onCreated={eventId => {
               setStack([]); setScreen('event'); setNavTab('home')
