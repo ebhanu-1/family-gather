@@ -9,9 +9,11 @@ interface Props {
   members: Member[]
   memberId: string
   onSend: (text: string) => void
+  onInputFocus?: () => void
+  onInputBlur?: () => void
 }
 
-export function GroupChatScreen({ messages, members, memberId, onSend }: Props) {
+export function GroupChatScreen({ messages, members, memberId, onSend, onInputFocus, onInputBlur }: Props) {
   const [text, setText] = useState('')
   const chatRef = useRef<HTMLDivElement>(null)
 
@@ -142,10 +144,17 @@ export function GroupChatScreen({ messages, members, memberId, onSend }: Props) 
           value={text}
           onChange={e => setText(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSend()}
-          onFocus={() => setTimeout(() => {
-            window.scrollTo(0, 0)
-            if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight
-          }, 350)}
+          onFocus={() => {
+            onInputFocus?.()
+            setTimeout(() => {
+              window.scrollTo(0, 0)
+              if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight
+            }, 350)
+          }}
+          onBlur={() => {
+            onInputBlur?.()
+            setTimeout(() => window.scrollTo(0, 0), 100)
+          }}
           placeholder="Message everyone…"
           style={{
             flex: 1, minWidth: 0, padding: '10px 16px', borderRadius: 24,
@@ -153,7 +162,7 @@ export function GroupChatScreen({ messages, members, memberId, onSend }: Props) 
             fontSize: 14, background: C.cream, color: C.text,
           }}
         />
-        <button onClick={handleSend} style={{
+        <button onPointerDown={e => { e.preventDefault(); handleSend() }} style={{
           width: 38, height: 38, borderRadius: '50%',
           background: text.trim() ? C.sage : C.border,
           border: 'none', cursor: text.trim() ? 'pointer' : 'default',

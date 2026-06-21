@@ -45,6 +45,7 @@ function AuthenticatedApp({ identity, clearIdentity, familyId }: { identity: Ide
   const [stack, setStack] = useState<{ screen: Screen; navTab: typeof navTab }[]>([])
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
   const [eventTab, setEventTab] = useState<EventTab>('plan')
+  const [chatInputFocused, setChatInputFocused] = useState(false)
 
   function goTo(to: Screen, eventId?: string, tab?: EventTab) {
     setStack(s => [...s, { screen, navTab }])
@@ -65,7 +66,7 @@ function AuthenticatedApp({ identity, clearIdentity, familyId }: { identity: Ide
   }
 
   const selectedEvent = events.find(e => e.id === selectedEventId) ?? null
-  const hideNav = screen === 'create'
+  const hideNav = screen === 'create' || chatInputFocused
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(var(--vh, 1svh) * 100)', background: C.cream, overflow: 'hidden' }}>
@@ -90,6 +91,8 @@ function AuthenticatedApp({ identity, clearIdentity, familyId }: { identity: Ide
           <GroupChatScreen
             messages={groupMessages} members={members} memberId={identity.memberId}
             onSend={text => sendGroupMessage(identity.memberId, text, familyId)}
+            onInputFocus={() => setChatInputFocused(true)}
+            onInputBlur={() => setChatInputFocused(false)}
           />
         )}
         {screen === 'event' && (
