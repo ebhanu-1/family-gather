@@ -143,6 +143,7 @@ export function GroupChatScreen({ messages, members, memberId, onSend }: Props) 
           onChange={e => setText(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSend()}
           onFocus={() => setTimeout(() => {
+            window.scrollTo(0, 0)
             if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight
           }, 350)}
           placeholder="Message everyone…"
