@@ -183,6 +183,14 @@ function DemoMain({ me, allKnownMembers, onSwitchUser }: { me: Member; allKnownM
       ...prev,
       [selectedEventId]: (prev[selectedEventId] ?? []).map(t => t.id === todoId ? { ...t, done } : t),
     })),
+    onUpdateTodo: (todoId: string, text: string) => setTodos(prev => ({
+      ...prev,
+      [selectedEventId]: (prev[selectedEventId] ?? []).map(t => t.id === todoId ? { ...t, text } : t),
+    })),
+    onDeleteTodo: (todoId: string) => setTodos(prev => ({
+      ...prev,
+      [selectedEventId]: (prev[selectedEventId] ?? []).filter(t => t.id !== todoId),
+    })),
     onAddItinerary: (item: Omit<ItineraryItem, 'id'>) => setItinerary(prev => ({
       ...prev,
       [selectedEventId]: [...(prev[selectedEventId] ?? []), { ...item, id: generateId() }],
@@ -198,6 +206,8 @@ function DemoMain({ me, allKnownMembers, onSwitchUser }: { me: Member; allKnownM
   } : {
     onAddTodo: () => {},
     onToggleTodo: () => {},
+    onUpdateTodo: () => {},
+    onDeleteTodo: () => {},
     onAddItinerary: () => {},
     onUpdateItinerary: () => {},
     onDeleteItinerary: () => {},

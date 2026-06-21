@@ -3,7 +3,7 @@ import { C } from './tokens'
 import { useIdentity } from './hooks/useIdentity'
 import {
   useMembers, useEvents, useTodos, useItinerary, useGroupMessages, useAllItinerary,
-  addTodo, toggleTodo, addItineraryItem, updateItineraryItem, deleteItineraryItem,
+  addTodo, toggleTodo, updateTodo, deleteTodo, addItineraryItem, updateItineraryItem, deleteItineraryItem,
   updateEvent, deleteEvent, sendGroupMessage,
 } from './hooks/useFirestore'
 import { BottomNav } from './components/BottomNav'
@@ -66,7 +66,7 @@ function AuthenticatedApp({ identity, clearIdentity, familyId }: { identity: Ide
   }
 
   const selectedEvent = events.find(e => e.id === selectedEventId) ?? null
-  const hideNav = screen === 'create' || chatInputFocused
+  const hideNav = screen === 'create' || screen === 'event' || chatInputFocused
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(var(--vh, 1svh) * 100)', background: C.cream, overflow: 'hidden' }}>
@@ -140,6 +140,8 @@ function EventDetailLoader({ event, members, memberId, activeTab, setActiveTab, 
       callbacks={{
         onAddTodo: (text) => addTodo(event.id, text, memberId),
         onToggleTodo: (todoId, done) => toggleTodo(event.id, todoId, done),
+        onUpdateTodo: (todoId, text) => updateTodo(event.id, todoId, text),
+        onDeleteTodo: (todoId) => deleteTodo(event.id, todoId),
         onAddItinerary: (item) => addItineraryItem(event.id, { ...item, createdBy: memberId }),
         onUpdateItinerary: (itemId, data) => updateItineraryItem(event.id, itemId, data),
         onDeleteItinerary: (itemId) => deleteItineraryItem(event.id, itemId),

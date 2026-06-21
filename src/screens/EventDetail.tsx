@@ -7,6 +7,8 @@ import type { FamilyEvent, Member, EventTab, TodoItem, ItineraryItem } from '../
 export interface EventDetailCallbacks {
   onAddTodo: (text: string) => void
   onToggleTodo: (todoId: string, done: boolean) => void
+  onUpdateTodo: (todoId: string, text: string) => void
+  onDeleteTodo: (todoId: string) => void
   onAddItinerary: (item: Omit<ItineraryItem, 'id'>) => void
   onUpdateItinerary: (itemId: string, data: Partial<Omit<ItineraryItem, 'id'>>) => void
   onDeleteItinerary: (itemId: string) => void
@@ -104,7 +106,7 @@ export function EventDetailScreen({
           onDelete={callbacks.onDeleteItinerary}
         />
       )}
-      {activeTab === 'todo'     && <TodoTab event={event} todos={todos} onToggle={callbacks.onToggleTodo} onAdd={callbacks.onAddTodo} />}
+      {activeTab === 'todo'     && <TodoTab event={event} todos={todos} onToggle={callbacks.onToggleTodo} onAdd={callbacks.onAddTodo} onUpdate={callbacks.onUpdateTodo} onDelete={callbacks.onDeleteTodo} />}
 
       {/* Edit event overlay */}
       {showEditOverlay && (
@@ -331,42 +333,88 @@ function PlanTab({ event, itinerary, onAdd, onUpdate, onDelete }: PlanTabProps) 
 
 // ── To-Do ─────────────────────────────────────────────────────────────────────
 
-function TodoTab({ event, todos, onToggle, onAdd }: { event: FamilyEvent; todos: TodoItem[]; onToggle: (id: string, done: boolean) => void; onAdd: (text: string) => void }) {
+function TodoTab({ event, todos, onToggle, onAdd, onUpdate, onDelete }: {
+  event: FamilyEvent; todos: TodoItem[]
+  onToggle: (id: string, done: boolean) => void
+  onAdd: (text: string) => void
+  onUpdate: (id: string, text: string) => void
+  onDelete: (id: string) => void
+}) {
   const [showForm, setShowForm] = useState(false)
   const [text, setText] = useState('')
-  const done = todos.filter(t => t.done).length
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editText, setEditText] = useState('')
+  const doneCount = todos.filter(t => t.done).length
   const inputRowRef = useRef<HTMLDivElement>(null)
+  const editRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!showForm) return
     inputRowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, [showForm])
 
+  useEffect(() => {
+    if (!editingId) return
+    editRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [editingId])
+
   function submit() {
     if (!text.trim()) return
     onAdd(text.trim()); setText(''); setShowForm(false)
   }
 
+  function startEdit(todo: TodoItem) {
+    setEditingId(todo.id); setEditText(todo.text)
+  }
+
+  function submitEdit() {
+    if (!editingId || !editText.trim()) return
+    onUpdate(editingId, editText.trim()); setEditingId(null)
+  }
+
   return (
     <div style={{ padding: '8px 16px 16px' }}>
-      <div style={{ fontSize: 12, color: C.textLight, marginBottom: 8 }}>{done} of {todos.length} done</div>
+      <div style={{ fontSize: 12, color: C.textLight, marginBottom: 8 }}>{doneCount} of {todos.length} done</div>
       {todos.map(todo => (
-        <div key={todo.id} onClick={() => onToggle(todo.id, !todo.done)} style={{
-          display: 'flex', alignItems: 'center', gap: 12,
-          padding: '12px 0', borderBottom: `1px solid ${C.border}`,
-          cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
-        }}>
+        <div key={todo.id}>
           <div style={{
-            width: 22, height: 22, borderRadius: 6, flexShrink: 0,
-            border: todo.done ? 'none' : `1.5px solid ${C.border}`,
-            background: todo.done ? C.sage : 'transparent',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '12px 0', borderBottom: editingId === todo.id ? 'none' : `1px solid ${C.border}`,
           }}>
-            {todo.done && <IconCheck color="white" />}
+            <div
+              onClick={() => onToggle(todo.id, !todo.done)}
+              style={{
+                width: 22, height: 22, borderRadius: 6, flexShrink: 0,
+                border: todo.done ? 'none' : `1.5px solid ${C.border}`,
+                background: todo.done ? C.sage : 'transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+              }}>
+              {todo.done && <IconCheck color="white" />}
+            </div>
+            <span
+              onClick={() => editingId === todo.id ? null : startEdit(todo)}
+              style={{ fontSize: 14, color: todo.done ? C.textLight : C.text, textDecoration: todo.done ? 'line-through' : 'none', flex: 1, cursor: 'pointer' }}>
+              {todo.text}
+            </span>
+            {editingId !== todo.id && (
+              <span onClick={() => startEdit(todo)} style={{ fontSize: 11, color: C.textLight, cursor: 'pointer', flexShrink: 0 }}>Edit</span>
+            )}
           </div>
-          <span style={{ fontSize: 14, color: todo.done ? C.textLight : C.text, textDecoration: todo.done ? 'line-through' : 'none' }}>
-            {todo.text}
-          </span>
+          {editingId === todo.id && (
+            <div ref={editRef} style={{ paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                <input value={editText} onChange={e => setEditText(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && submitEdit()}
+                  autoFocus
+                  style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: `1.5px solid ${C.sage}`, outline: 'none', fontSize: 14, background: C.card, color: C.text }} />
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => { onDelete(todo.id); setEditingId(null) }} style={{ ...cancelBtn, color: '#c0392b', borderColor: '#e74c3c' }}>Delete</button>
+                <button onClick={() => setEditingId(null)} style={cancelBtn}>Cancel</button>
+                <button onClick={submitEdit} style={addBtn}>Save</button>
+              </div>
+            </div>
+          )}
         </div>
       ))}
       {showForm ? (
@@ -374,7 +422,7 @@ function TodoTab({ event, todos, onToggle, onAdd }: { event: FamilyEvent; todos:
           <input value={text} onChange={e => setText(e.target.value)} onKeyDown={e => e.key === 'Enter' && submit()}
             placeholder="Add an item…" autoFocus
             style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: `1.5px solid ${C.sage}`, outline: 'none', fontSize: 14, background: C.card, color: C.text }} />
-          <button onClick={submit} style={{ padding: '8px 14px', borderRadius: 8, background: C.sage, border: 'none', color: 'white', fontWeight: 600, cursor: 'pointer' }}>Add</button>
+          <button onPointerDown={e => { e.preventDefault(); submit() }} style={{ padding: '8px 14px', borderRadius: 8, background: C.sage, border: 'none', color: 'white', fontWeight: 600, cursor: 'pointer' }}>Add</button>
         </div>
       ) : (
         <button onClick={() => setShowForm(true)} style={{ ...dashedBtn, marginTop: 12 }}>

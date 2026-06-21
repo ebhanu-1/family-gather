@@ -101,6 +101,14 @@ export async function toggleTodo(eventId: string, todoId: string, done: boolean)
   await updateDoc(doc(db, 'events', eventId, 'todos', todoId), { done })
 }
 
+export async function updateTodo(eventId: string, todoId: string, text: string): Promise<void> {
+  await updateDoc(doc(db, 'events', eventId, 'todos', todoId), { text })
+}
+
+export async function deleteTodo(eventId: string, todoId: string): Promise<void> {
+  await deleteDoc(doc(db, 'events', eventId, 'todos', todoId))
+}
+
 // ── Itinerary ─────────────────────────────────────────────────────────────────
 
 export function useItinerary(eventId: string | null) {
