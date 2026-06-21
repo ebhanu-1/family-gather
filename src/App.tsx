@@ -68,7 +68,7 @@ function AuthenticatedApp({ identity, clearIdentity, familyId }: { identity: Ide
   const hideNav = screen === 'create'
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(var(--vh, 1svh) * 100)', background: C.cream, overflow: 'hidden' }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 'calc(var(--vh, 1svh) * 100)', display: 'flex', flexDirection: 'column', background: C.cream, overflow: 'hidden' }}>
       <div style={{ flex: 1, overflowY: screen === 'chat' ? 'hidden' : 'auto', overflowX: 'hidden', minHeight: 0, position: 'relative' }}>
         {screen === 'home' && (
           <HomeScreen
