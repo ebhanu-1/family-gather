@@ -37,7 +37,7 @@ export function GroupChatScreen({ messages, members, memberId, onSend }: Props) 
   }
 
   return (
-    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Header */}
       <div style={{
         padding: '16px 16px 12px',
