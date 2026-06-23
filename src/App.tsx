@@ -24,7 +24,9 @@ function getFamilyId(): string {
     localStorage.setItem('familygather_lastfamily', fromUrl)
     return fromUrl
   }
-  return localStorage.getItem('familygather_lastfamily') || 'default'
+  const stored = localStorage.getItem('familygather_lastfamily')
+  if (stored) return stored
+  return ''
 }
 
 export default function App() {
@@ -33,7 +35,65 @@ export default function App() {
 }
 
 function MainApp() {
-  const familyId = getFamilyId()
+  const [familyId, setFamilyId] = useState(getFamilyId)
+
+  if (!familyId) {
+    return <FamilyCodeScreen onEnter={code => {
+      const id = code.trim().toLowerCase()
+      localStorage.setItem('familygather_lastfamily', id)
+      setFamilyId(id)
+    }} />
+  }
+
+  return <AuthenticatedFlow familyId={familyId} />
+}
+
+function FamilyCodeScreen({ onEnter }: { onEnter: (code: string) => void }) {
+  const [code, setCode] = useState('')
+  function handleSubmit() {
+    if (!code.trim()) return
+    onEnter(code.trim().toLowerCase())
+  }
+  return (
+    <div style={{ minHeight: '100vh', background: C.cream, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ background: 'white', borderRadius: 24, padding: '36px 28px', maxWidth: 360, width: '100%', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div style={{ fontSize: 36 }}>🏠</div>
+          <div style={{ fontFamily: 'Georgia, serif', fontSize: 26, fontWeight: 700, color: C.text, marginTop: 6 }}>FamilyGather</div>
+        </div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: C.textLight, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>Family code</div>
+        <input
+          value={code}
+          onChange={e => setCode(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+          placeholder="Enter your family code"
+          autoFocus
+          autoCapitalize="none"
+          autoCorrect="off"
+          style={{
+            display: 'block', width: '100%', padding: '11px 14px', borderRadius: 10,
+            border: `1.5px solid ${code ? C.sage : C.border}`, outline: 'none',
+            fontSize: 15, background: C.cream, color: C.text, boxSizing: 'border-box', marginBottom: 16,
+          }}
+        />
+        <button
+          onPointerDown={e => { e.preventDefault(); handleSubmit() }}
+          disabled={!code.trim()}
+          style={{
+            width: '100%', padding: 14, borderRadius: 12,
+            background: code.trim() ? C.sage : C.border,
+            border: 'none', color: 'white', fontSize: 16, fontWeight: 700,
+            cursor: code.trim() ? 'pointer' : 'default', fontFamily: 'Georgia, serif',
+          }}
+        >
+          Continue →
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function AuthenticatedFlow({ familyId }: { familyId: string }) {
   const { identity, saveIdentity, clearIdentity } = useIdentity(familyId)
   if (!identity) return <Onboarding onComplete={saveIdentity} familyId={familyId} />
   return <AuthenticatedApp identity={identity} clearIdentity={clearIdentity} familyId={familyId} />
