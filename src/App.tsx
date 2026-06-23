@@ -19,7 +19,12 @@ import type { Screen, EventTab, Identity, FamilyEvent, Member } from './types'
 const isFirebaseConfigured = Boolean(import.meta.env.VITE_FIREBASE_PROJECT_ID)
 
 function getFamilyId(): string {
-  return new URLSearchParams(window.location.search).get('family') || 'default'
+  const fromUrl = new URLSearchParams(window.location.search).get('family')
+  if (fromUrl) {
+    localStorage.setItem('familygather_lastfamily', fromUrl)
+    return fromUrl
+  }
+  return localStorage.getItem('familygather_lastfamily') || 'default'
 }
 
 export default function App() {
