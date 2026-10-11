@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/bhanu/Downloads/**)",
+      "Bash(unzip -o \"Idea to prototype.zip\" -d \"idea-to-prototype\")",
+      "Bash(npm create *)",
+      "Bash(which node *)",
+      "Read(//Users/bhanu/**)",
+      "Read(//opt/homebrew/**)",
+      "Bash(ls /pkg/env/global/bin/ 2>/dev/null; ls \"/Users/bhanu/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/b983b5a1-e7d7-47dc-bf96-fe22281d0557/9ea55323-c051-46fd-b7df-9c75d47125f7/bin/\" 2>/dev/null)",
+      "Bash(find /opt /usr/local /Users/bhanu -name \"node\" -type f 2>/dev/null | head -10; find /Users/bhanu -name \".nvmrc\" -o -name \".node-version\" 2>/dev/null | head -5)",
+      "Bash(npm --version)",
+      "Bash(find /usr/local /opt/homebrew /Users/bhanu/Downloads -name \"node\" -type f 2>/dev/null | head -10)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:5173)",
+      "mcp__Claude_Preview__preview_start",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(sleep 3 && cat /tmp/vite-dev.log)",
+      "Bash(npx netlify *)",
+      "Bash(npx tsc *)",
+      "Bash(sed -i '' \"s/useState<EventTab>\\('details'\\)/useState<EventTab>\\('plan'\\)/g\" \"/Users/bhanu/Event app/src/App.tsx\" \"/Users/bhanu/Event app/src/demo/DemoApp.tsx\")",
+      "Bash(sed -i '' \"s/setEventTab\\('details'\\)/setEventTab\\('plan'\\)/g\" \"/Users/bhanu/Event app/src/App.tsx\" \"/Users/bhanu/Event app/src/demo/DemoApp.tsx\")",
+      "Bash(gh --version)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ]
+  }
+}
