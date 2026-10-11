@@ -3,6 +3,7 @@ import { C, greeting } from '../tokens'
 import { EventCard } from '../components/EventCard'
 import { Avatar } from '../components/Avatar'
 import type { FamilyEvent, Member } from '../types'
+import { APP_VERSION } from '../version'
 
 interface Props {
   events: FamilyEvent[]
@@ -25,7 +26,7 @@ export function HomeScreen({ events, members, navigate, onAdd, memberId, onSwitc
         <div>
           <div style={{ fontSize: 13, color: C.textLight }}>{greeting()}</div>
           <div style={{ fontFamily: 'Georgia, serif', fontSize: 22, fontWeight: 700, color: C.text, marginTop: 2 }}>
-            Our Events 🏠
+            Our Events 🏠 <span style={{ fontSize: 12, fontWeight: 400, color: C.textLight, marginLeft: 4 }}>v{APP_VERSION}</span>
           </div>
         </div>
         {me ? (
