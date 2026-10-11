@@ -44,6 +44,19 @@ npm install
 
 ---
 
+## 3b. Turn on anonymous sign-in and deploy the security rules
+
+The app signs every visitor in anonymously and uses Firestore rules to keep each family's data private.
+
+1. Firebase console → **Authentication** → **Sign-in method** → enable **Anonymous**.
+2. Deploy the rules from this folder (`firestore.rules`):
+   ```bash
+   npx firebase-tools login
+   npx firebase-tools deploy --only firestore:rules --project YOUR_PROJECT_ID
+   ```
+
+Do step 1 before deploying the rules, or the app won't be able to sign in.
+
 ## 4. Run locally
 
 ```bash

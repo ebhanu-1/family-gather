@@ -1,12 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { C } from './tokens'
 import { APP_VERSION } from './version'
 import { useIdentity } from './hooks/useIdentity'
 import {
   useMembers, useEvents, useTodos, useItinerary, useGroupMessages, useAllItinerary,
   addTodo, toggleTodo, updateTodo, deleteTodo, addItineraryItem, updateItineraryItem, deleteItineraryItem,
-  updateEvent, deleteEvent, sendGroupMessage,
+  updateEvent, deleteEvent, sendGroupMessage, joinFamily,
 } from './hooks/useFirestore'
+import { useAnonymousAuth } from './hooks/useAuth'
 import { BottomNav } from './components/BottomNav'
 import { Onboarding } from './screens/Onboarding'
 import { HomeScreen } from './screens/Home'
@@ -32,7 +33,24 @@ function getFamilyId(): string {
 
 export default function App() {
   if (!isFirebaseConfigured) return <DemoApp />
-  return <MainApp />
+  return <SignedInGate><MainApp /></SignedInGate>
+}
+
+function SignedInGate({ children }: { children: React.ReactNode }) {
+  const status = useAnonymousAuth()
+  if (status === 'error') {
+    return <CenterMessage>Could not connect. Check that anonymous sign-in is enabled in Firebase.</CenterMessage>
+  }
+  if (status === 'loading') return <CenterMessage>Loading…</CenterMessage>
+  return <>{children}</>
+}
+
+function CenterMessage({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ minHeight: '100vh', background: C.cream, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, color: C.textMid, fontSize: 14, textAlign: 'center' }}>
+      {children}
+    </div>
+  )
 }
 
 function MainApp() {
@@ -98,6 +116,29 @@ function FamilyCodeScreen({ onEnter }: { onEnter: (code: string) => void }) {
 
 function AuthenticatedFlow({ familyId }: { familyId: string }) {
   const { identity, saveIdentity, clearIdentity } = useIdentity(familyId)
+  const [joinState, setJoinState] = useState<'joining' | 'joined' | 'failed'>('joining')
+
+  useEffect(() => {
+    setJoinState('joining')
+    joinFamily(familyId)
+      .then(() => setJoinState('joined'))
+      .catch(e => { console.error('Could not join family', e); setJoinState('failed') })
+  }, [familyId])
+
+  if (joinState === 'joining') return <CenterMessage>Loading…</CenterMessage>
+  if (joinState === 'failed') {
+    return (
+      <CenterMessage>
+        <div>
+          <div style={{ marginBottom: 12 }}>Could not open this family. Check the code and your connection.</div>
+          <button onClick={() => { localStorage.removeItem('familygather_lastfamily'); window.location.reload() }}
+            style={{ padding: '10px 18px', borderRadius: 10, border: 'none', background: C.sage, color: 'white', fontWeight: 600, cursor: 'pointer' }}>
+            Try another code
+          </button>
+        </div>
+      </CenterMessage>
+    )
+  }
   if (!identity) return <Onboarding onComplete={saveIdentity} familyId={familyId} />
   return <AuthenticatedApp identity={identity} clearIdentity={clearIdentity} familyId={familyId} />
 }

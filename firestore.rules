@@ -1,0 +1,64 @@
+rules_version = '2';
+
+// Only signed-in members of a family can read or change that family's data.
+// Membership = the user's anonymous auth uid is listed in /families/{familyId}.uids
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isFamilyMember(familyId) {
+      return signedIn()
+        && request.auth.uid in get(/databases/$(database)/documents/families/$(familyId)).data.uids;
+    }
+
+    function eventFamilyId(eventId) {
+      return get(/databases/$(database)/documents/events/$(eventId)).data.familyId;
+    }
+
+    // Family records: anyone signed in can fetch one by its id (the code),
+    // nobody can list all families, and you can only add yourself.
+    match /families/{familyId} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['uids'])
+        && request.resource.data.uids == [request.auth.uid];
+      allow update: if signedIn()
+        && request.resource.data.keys().hasOnly(['uids'])
+        && (request.auth.uid in resource.data.uids
+            || request.resource.data.uids == resource.data.uids + [request.auth.uid]);
+      allow delete: if false;
+    }
+
+    match /members/{memberId} {
+      allow read, delete: if isFamilyMember(resource.data.familyId);
+      allow create: if isFamilyMember(request.resource.data.familyId);
+      allow update: if isFamilyMember(resource.data.familyId)
+        && request.resource.data.familyId == resource.data.familyId;
+    }
+
+    match /events/{eventId} {
+      allow read, delete: if isFamilyMember(resource.data.familyId);
+      allow create: if isFamilyMember(request.resource.data.familyId);
+      allow update: if isFamilyMember(resource.data.familyId)
+        && request.resource.data.familyId == resource.data.familyId;
+
+      // Todos, itinerary, and per-event messages inherit the event's family.
+      match /{subcollection}/{docId} {
+        allow read, write: if isFamilyMember(eventFamilyId(eventId));
+      }
+    }
+
+    // Family group chat
+    match /messages/{messageId} {
+      allow read: if isFamilyMember(resource.data.familyId);
+      allow create: if isFamilyMember(request.resource.data.familyId);
+      allow update, delete: if false;
+    }
+
+    // Everything else is denied by default.
+  }
+}

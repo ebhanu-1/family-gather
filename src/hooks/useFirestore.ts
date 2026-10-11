@@ -1,21 +1,32 @@
-// Flat data model — no families, no share codes
-// /members/{memberId}
-// /events/{eventId}
-// /events/{eventId}/todos/{todoId}
-// /events/{eventId}/itinerary/{itemId}
-// /events/{eventId}/messages/{messageId}
+// Flat data model, scoped by family. Security rules (firestore.rules) only let
+// signed-in members of a family read or write that family's documents.
+// /families/{familyId}          { uids: [authUid, ...] }
+// /members/{memberId}           { familyId, ... }
+// /events/{eventId}             { familyId, ... }
+// /events/{eventId}/todos|itinerary|messages/...
+// /messages/{messageId}         { familyId, authorId, text, timestamp }
 
 import { useEffect, useState } from 'react'
 import {
-  collection, doc, onSnapshot, query, orderBy,
-  addDoc, updateDoc, deleteDoc, setDoc, serverTimestamp, getDocs,
+  collection, doc, onSnapshot, query, where, orderBy,
+  addDoc, updateDoc, deleteDoc, setDoc, serverTimestamp, getDocs, arrayUnion,
 } from 'firebase/firestore'
-import { db } from '../firebase'
+import { db, auth } from '../firebase'
 import type { Member, FamilyEvent, TodoItem, ItineraryItem, ChatMessage } from '../types'
 
-// Backward compat: docs without familyId belong to 'default'
-function matchesFamily<T extends { familyId?: string }>(item: T, familyId: string) {
-  return item.familyId === familyId || (familyId === 'default' && !item.familyId)
+// Sort helper for Firestore timestamps. Pending server timestamps (null) sort last.
+function millis(t: { toMillis?: () => number } | null | undefined): number {
+  return t?.toMillis?.() ?? Number.MAX_SAFE_INTEGER
+}
+
+// ── Family access ─────────────────────────────────────────────────────────────
+
+// Adds the current anonymous user to the family, creating the family if it's new.
+// The family code is the secret: anyone who knows it can join.
+export async function joinFamily(familyId: string): Promise<void> {
+  const uid = auth.currentUser?.uid
+  if (!uid) throw new Error('Not signed in')
+  await setDoc(doc(db, 'families', familyId), { uids: arrayUnion(uid) }, { merge: true })
 }
 
 // ── Members ───────────────────────────────────────────────────────────────────
@@ -24,10 +35,11 @@ export function useMembers(familyId: string) {
   const [members, setMembers] = useState<Member[]>([])
   useEffect(() => {
     return onSnapshot(
-      query(collection(db, 'members'), orderBy('createdAt')),
+      query(collection(db, 'members'), where('familyId', '==', familyId)),
       snap => setMembers(
-        snap.docs.map(d => ({ id: d.id, ...d.data() } as Member))
-          .filter(m => matchesFamily(m, familyId))
+        snap.docs
+          .map(d => ({ id: d.id, ...d.data() } as Member))
+          .sort((a, b) => millis(a.createdAt) - millis(b.createdAt))
       )
     )
   }, [familyId])
@@ -35,9 +47,10 @@ export function useMembers(familyId: string) {
 }
 
 export async function fetchMembers(familyId: string): Promise<Member[]> {
-  const snap = await getDocs(query(collection(db, 'members'), orderBy('createdAt')))
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Member))
-    .filter(m => matchesFamily(m, familyId))
+  const snap = await getDocs(query(collection(db, 'members'), where('familyId', '==', familyId)))
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() } as Member))
+    .sort((a, b) => millis(a.createdAt) - millis(b.createdAt))
 }
 
 export async function createMember(id: string, data: Omit<Member, 'id'>, familyId: string): Promise<void> {
@@ -50,10 +63,11 @@ export function useEvents(familyId: string) {
   const [events, setEvents] = useState<FamilyEvent[]>([])
   useEffect(() => {
     return onSnapshot(
-      query(collection(db, 'events'), orderBy('date')),
+      query(collection(db, 'events'), where('familyId', '==', familyId)),
       snap => setEvents(
-        snap.docs.map(d => ({ ...d.data(), id: d.id } as FamilyEvent))
-          .filter(e => matchesFamily(e, familyId))
+        snap.docs
+          .map(d => ({ ...d.data(), id: d.id } as FamilyEvent))
+          .sort((a, b) => a.date.localeCompare(b.date))
       )
     )
   }, [familyId])
@@ -64,7 +78,6 @@ export async function createEvent(data: Omit<FamilyEvent, 'id'>, familyId: strin
   const ref = await addDoc(collection(db, 'events'), { ...data, familyId, createdAt: serverTimestamp() })
   return ref.id
 }
-
 export async function updateEvent(eventId: string, data: Partial<Omit<FamilyEvent, 'id'>>): Promise<void> {
   const clean: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(data)) {
@@ -189,10 +202,11 @@ export function useGroupMessages(familyId: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   useEffect(() => {
     return onSnapshot(
-      query(collection(db, 'messages'), orderBy('timestamp')),
+      query(collection(db, 'messages'), where('familyId', '==', familyId)),
       snap => setMessages(
-        snap.docs.map(d => ({ id: d.id, ...d.data() } as ChatMessage))
-          .filter(m => matchesFamily(m, familyId))
+        snap.docs
+          .map(d => ({ id: d.id, ...d.data() } as ChatMessage))
+          .sort((a, b) => millis(a.timestamp) - millis(b.timestamp))
       )
     )
   }, [familyId])
